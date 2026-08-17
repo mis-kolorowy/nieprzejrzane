@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Nieprzejrzane z jedną sekcją</title>
+	<style>
+		:root {
+			--bg-color: #f8f9fa;
+			--text-color: #202122;
+			--panel-bg: #ffffff;
+			--border-color: #a2a9b1;
+			--title-color: #54595d;
+			--grid-bg: #fafafa;
+			--grid-border: #eaecf0;
+			--table-bg: #ffffff;
+			--th-bg: #eaecf0;
+			--tr-even: #f8f9fa;
+			--tr-hover: #eaf3ff;
+			--link-color: #36c;
+			--badge-bg: #e0f2fe;
+			--badge-text: #0369a1;
+			--btn-bg: #ffffff;
+			--btn-text: #202122;
+			--preview-bg: #ffffff;
+		}
+
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+			margin: 15px;
+			background-color: var(--bg-color);
+			color: var(--text-color);
+		}
+
+		.header-container {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 15px;
+		}
+
+		h1 { font-size: 20px; margin: 0; }
+
+		.filter-panel {
+			background: var(--panel-bg);
+			border: 1px solid var(--border-color);
+			border-radius: 4px;
+			padding: 15px;
+			margin-bottom: 15px;
+			display: flex;
+			flex-direction: column;
+			gap: 16px;
+		}
+
+		.filter-group { display: flex; flex-direction: column; gap: 6px; }
+		.filter-group label.group-title { font-size: 11px; font-weight: bold; color: var(--title-color); text-transform: uppercase; }
+
+		.radio-group-inline { display: flex; gap: 12px; flex-wrap: wrap; }
+		.radio-label, .checkbox-label { font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+
+		.selection-grid {
+			display: flex;
+			flex-direction: column;
+			flex-wrap: wrap;
+			max-height: 180px;
+			overflow-x: auto;
+			overflow-y: hidden;
+			gap: 6px 16px;
+			border: 1px solid var(--grid-border);
+			padding: 8px;
+			border-radius: 3px;
+			background: var(--grid-bg);
+		}
+
+		.selection-grid .radio-label {
+			width: 170px;
+			white-space: nowrap;
+		}
+
+		.counter { margin-bottom: 10px; font-size: 14px; font-weight: bold; }
+		.pagination { margin: 15px 0; display: flex; gap: 10px; align-items: center; }
+
+		button {
+			padding: 6px 12px;
+			border: 1px solid var(--border-color);
+			background: var(--btn-bg);
+			color: var(--btn-text);
+			border-radius: 3px;
+			cursor: pointer;
+		}
+		button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+		.table-wrapper { overflow-x: auto; }
+		table.main-table { width: 100%; border-collapse: collapse; background: var(--table-bg); border: 1px solid var(--border-color); min-width: 900px; }
+		th, td { border: 1px solid var(--border-color); padding: 8px 10px; text-align: left; font-size: 13px; }
+		th {
+			background-color: var(--th-bg);
+			font-weight: bold;
+			cursor: pointer;
+			user-select: none;
+			position: relative;
+			padding-right: 20px;
+		}
+		th:hover { opacity: 0.85; }
+		th::after {
+			content: '';
+			position: absolute;
+			right: 6px;
+			top: 50%;
+			transform: translateY(-50%);
+			font-size: 10px;
+			opacity: 0.5;
+		}
+		th.sort-asc::after { content: '▲'; opacity: 1; }
+		th.sort-desc::after { content: '▼'; opacity: 1; }
+
+		tr.main-row:nth-child(4n+1) { background-color: var(--table-bg); }
+		tr.main-row:nth-child(4n+3) { background-color: var(--tr-even); }
+		tr.main-row:hover { background-color: var(--tr-hover); }
+
+		.main-table td:first-child { font-size: 15px; font-weight: bold; }
+
+		a { color: var(--link-color); text-decoration: none; }
+		a:hover { text-decoration: underline; }
+		#loading { font-size: 16px; color: var(--link-color); font-weight: bold; margin: 20px 0; }
+
+		/* --- STYLE DLA PODGLĄDU STRONY --- */
+		.preview-row { display: none; }
+		.preview-row.open { display: table-row; }
+
+		.preview-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 15px;
+			padding: 12px;
+			background: var(--grid-bg);
+		}
+
+		.preview-column {
+			background: var(--preview-bg);
+			border: 1px solid var(--border-color);
+			border-radius: 4px;
+			padding: 12px;
+			overflow-x: auto;
+		}
+
+		.preview-column h3 {
+			margin-top: 0;
+			margin-bottom: 10px;
+			font-size: 12px;
+			text-transform: uppercase;
+			color: var(--title-color);
+			border-bottom: 1px solid var(--grid-border);
+			padding-bottom: 4px;
+		}
+
+		/* Prawa kolumna - wiki-kod */
+		.code-view {
+			font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+			font-size: 12px;
+			white-space: pre-wrap;
+			word-break: break-all;
+			line-height: 1.4;
+			color: #24292e;
+		}
+
+		/* Lewa kolumna - podgląd wiki */
+		.wiki-view {
+			font-family: sans-serif;
+			font-size: 13px;
+			line-height: 1.5;
+			white-space: pre-wrap;
+		}
+
+		.wiki-view .wiki-header {
+			font-size: 16px;
+			font-weight: normal;
+			border-bottom: 1px solid #a2a9b1;
+			margin: 10px 0 8px 0;
+			padding-bottom: 2px;
+		}
+
+		.wiki-view .wiki-template {
+			font-weight: bold;
+			margin-top: 6px;
+			margin-bottom: 2px;
+			display: block;
+		}
+	</style>
+</head>
+<body>
+
+	<div class="header-container">
+		<h1>Nieprzejrzane z jedną sekcją językową w polskim Wikisłowniku (stan na dzień 16 sierpnia 2026).</h1>
+	</div>
+
+	<div class="filter-panel">
+		<div class="filter-group">
+			<div class="radio-group-inline">
+				<label class="checkbox-label">
+					<input type="checkbox" id="showPreviewFilter">
+					<strong>Pokaż podgląd strony</strong>
+				</label>
+			</div>
+		</div>
+
+		<div class="filter-group">
+			<label class="group-title">Tryb języka</label>
+			<div class="radio-group-inline" style="margin-bottom: 6px;">
+				<label class="radio-label"><input type="radio" name="langMode" value="any" checked> Między innymi język</label>
+				<label class="radio-label"><input type="radio" name="langMode" value="only"> Tylko język</label>
+			</div>
+			<label class="group-title">Wybierz język</label>
+			<div class="selection-grid" id="languagesContainer"></div>
+		</div>
+
+		<div class="filter-group">
+			<label class="group-title">Wybierz autora</label>
+			<div class="selection-grid" id="creatorsContainer"></div>
+		</div>
+
+		<div class="filter-group">
+			<label class="group-title">Tryb współautora</label>
+			<div class="radio-group-inline" style="margin-bottom: 6px;">
+				<label class="radio-label"><input type="radio" name="contribMode" value="any" checked> Między innymi współautor</label>
+				<label class="radio-label"><input type="radio" name="contribMode" value="only"> Tylko współautor</label>
+			</div>
+			<label class="group-title">Wybierz współautora</label>
+			<div class="selection-grid" id="contributorsContainer"></div>
+		</div>
+	</div>
+
+	<div id="loading">Wczytywanie bazy danych...</div>
+
+	<div class="counter">
+		Znaleziono: <span id="visibleCount">0</span> / <span id="totalCount">0</span>
+	</div>
+
+	<div class="table-wrapper">
+		<table class="main-table">
+			<thead>
+				<tr>
+					<th data-sort="title">Hasło</th>
+					<th data-sort="language">Język</th>
+					<th data-sort="created_at">Data utworzenia</th>
+					<th data-sort="size_bytes">Rozmiar strony (bajty)</th>
+					<th data-sort="creator">Autor</th>
+					<th data-sort="contributors">Współautorzy</th>
+					<th data-sort="backlinks_count">Liczba linkujących</th>
+				</tr>
+			</thead>
+			<tbody id="tableBody"></tbody>
+		</table>
+	</div>
+
+	<div class="pagination">
+		<button id="prevBtn">← Poprzednia</button>
+		<span>Strona <span id="currentPage">1</span> z <span id="totalPages">1</span></span>
+		<button id="nextBtn">Następna →</button>
+	</div>
+
+	<script>
+		let rawData = [];
+		let filteredData = [];
+		let currentPage = 1;
+		const PAGE_SIZE = 50;
+
+		let sortColumn = null;
+		let sortDirection = 'asc';
+
+		const SECTION_TEMPLATES = [
+			'wymowa', 'znaczenia', 'odmiana', 'przykłady', 'składnia', 
+			'kolokacje', 'synonimy', 'antonimy', 'hiperonimy', 'hiponimy', 
+			'holonimy', 'meronimy', 'pokrewne', 'frazeologia', 'etymologia', 
+			'uwagi', 'źródła'
+		];
+
+		async function init() {
+			try {
+				const res = await fetch('dane.json');
+				rawData = await res.json();
+				
+				document.getElementById('loading').style.display = 'none';
+				document.getElementById('totalCount').textContent = rawData.length;
+
+				populateLanguages();
+				populateCreators();
+				populateContributors();
+				attachEventListeners();
+				applyFilters();
+			} catch (e) {
+				document.getElementById('loading').textContent = 'Błąd wczytywania danych JSON!';
+			}
+		}
+
+		function populateLanguages() {
+			const container = document.getElementById('languagesContainer');
+			const set = new Set();
+			rawData.forEach(item => { if (item.language) set.add(item.language); });
+
+			const sorted = Array.from(set).sort((a,b) => a.localeCompare(b, 'pl'));
+
+			let html = `
+				<label class="radio-label" style="margin-bottom: 6px;">
+					<input type="radio" name="langSelect" value="" checked> <em>-- Wszystkie --</em>
+				</label>
+			`;
+
+			sorted.forEach(lang => {
+				html += `
+					<label class="radio-label">
+						<input type="radio" name="langSelect" value="${escapeHtml(lang.toLowerCase())}">
+						${escapeHtml(lang)}
+					</label>
+				`;
+			});
+
+			container.innerHTML = html;
+		}
+
+		function populateCreators() {
+			const container = document.getElementById('creatorsContainer');
+			const set = new Set();
+			rawData.forEach(item => { if (item.creator) set.add(item.creator); });
+
+			const sorted = Array.from(set).sort((a,b) => a.localeCompare(b, 'pl'));
+
+			let html = `
+				<label class="radio-label" style="margin-bottom: 6px;">
+					<input type="radio" name="creatorSelect" value="" checked> <em>-- Wszyscy --</em>
+				</label>
+			`;
+
+			sorted.forEach(creator => {
+				html += `
+					<label class="radio-label">
+						<input type="radio" name="creatorSelect" value="${escapeHtml(creator.toLowerCase())}">
+						${escapeHtml(creator)}
+					</label>
+				`;
+			});
+
+			container.innerHTML = html;
+		}
+
+		function populateContributors() {
+			const container = document.getElementById('contributorsContainer');
+			const set = new Set();
+			rawData.forEach(item => {
+				if (Array.isArray(item.contributors)) {
+					item.contributors.forEach(c => set.add(c));
+				}
+			});
+
+			const sorted = Array.from(set).sort((a,b) => a.localeCompare(b, 'pl'));
+
+			let html = `
+				<label class="radio-label" style="margin-bottom: 6px;">
+					<input type="radio" name="contribSelect" value="" checked> <em>-- Wszyscy --</em>
+				</label>
+			`;
+
+			sorted.forEach(contrib => {
+				html += `
+					<label class="radio-label">
+						<input type="radio" name="contribSelect" value="${escapeHtml(contrib.toLowerCase())}">
+						${escapeHtml(contrib)}
+					</label>
+				`;
+			});
+
+			container.innerHTML = html;
+		}
+
+		function attachEventListeners() {
+			document.querySelector('.filter-panel').addEventListener('change', (e) => {
+				if (e.target.matches('input[type="radio"], input[type="checkbox"]')) {
+					if (e.target.id === 'showPreviewFilter') {
+						renderTable();
+					} else {
+						applyFilters();
+					}
+				}
+			});
+
+			document.querySelectorAll('th[data-sort]').forEach(th => {
+				th.addEventListener('click', () => {
+					const col = th.getAttribute('data-sort');
+					if (sortColumn === col) {
+						sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+					} else {
+						sortColumn = col;
+						sortDirection = 'asc';
+					}
+					
+					document.querySelectorAll('th[data-sort]').forEach(h => {
+						h.classList.remove('sort-asc', 'sort-desc');
+					});
+					th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+
+					sortData();
+					renderTable();
+				});
+			});
+		}
+
+		function applyFilters() {
+			const selectedLangEl = document.querySelector('input[name="langSelect"]:checked');
+			const selectedLang = selectedLangEl ? selectedLangEl.value.toLowerCase() : '';
+			const langMode = document.querySelector('input[name="langMode"]:checked').value;
+
+			const selectedCreatorEl = document.querySelector('input[name="creatorSelect"]:checked');
+			const selectedCreator = selectedCreatorEl ? selectedCreatorEl.value.toLowerCase() : '';
+
+			const selectedContribEl = document.querySelector('input[name="contribSelect"]:checked');
+			const selectedContrib = selectedContribEl ? selectedContribEl.value.toLowerCase() : '';
+			const contribMode = document.querySelector('input[name="contribMode"]:checked').value;
+
+			filteredData = rawData.filter(item => {
+				if (selectedLang) {
+					const itemLang = (item.language || '').toLowerCase();
+					if (langMode === 'only') {
+						if (itemLang !== selectedLang) return false;
+					} else {
+						if (itemLang !== selectedLang) return false; // W przypadku pojedynczej wartości w obiekcie działa identycznie
+					}
+				}
+
+				if (selectedCreator) {
+					const itemCreator = (item.creator || '').toLowerCase();
+					if (itemCreator !== selectedCreator) return false;
+				}
+
+				if (selectedContrib) {
+					const contribsLower = Array.isArray(item.contributors) ? item.contributors.map(c => c.toLowerCase()) : [];
+					if (contribMode === 'only') {
+						if (contribsLower.length !== 1 || contribsLower[0] !== selectedContrib) return false;
+					} else {
+						if (!contribsLower.includes(selectedContrib)) return false;
+					}
+				}
+
+				return true;
+			});
+
+			currentPage = 1;
+			if (sortColumn) {
+				sortData();
+			}
+			renderTable();
+		}
+
+		function sortData() {
+			if (!sortColumn) return;
+
+			filteredData.sort((a, b) => {
+				let valA = a[sortColumn];
+				let valB = b[sortColumn];
+
+				if (sortColumn === 'contributors') {
+					valA = Array.isArray(a.contributors) ? a.contributors.join(', ') : '';
+					valB = Array.isArray(b.contributors) ? b.contributors.join(', ') : '';
+				}
+
+				let comparison = 0;
+				if (typeof valA === 'number' && typeof valB === 'number') {
+					comparison = valA - valB;
+				} else if (typeof valA === 'string' && typeof valB === 'string') {
+					comparison = valA.localeCompare(valB, 'pl');
+				} else {
+					comparison = String(valA || '').localeCompare(String(valB || ''), 'pl');
+				}
+
+				return sortDirection === 'asc' ? comparison : -comparison;
+			});
+		}
+
+		function formatDate(isoString) {
+			if (!isoString) return '';
+			return isoString.replace('T', ' ').replace('Z', '');
+		}
+
+		function renderWikiPreview(wikitext) {
+			if (!wikitext) return '';
+			
+			const lines = wikitext.split('\n');
+			const parsedLines = lines.map(line => {
+				let trimmed = line.trim();
+
+				if (trimmed.startsWith('==') && trimmed.endsWith('==')) {
+					const title = trimmed.replace(/^==\s*/, '').replace(/\s*==$/, '');
+					return `<div class="wiki-header">${escapeHtml(title)}</div>`;
+				}
+
+				for (const tpl of SECTION_TEMPLATES) {
+					const pattern = new RegExp(`^\\{\\{\\s*${tpl}\\s*\\}\\}$`, 'i');
+					if (pattern.test(trimmed)) {
+						return `<span class="wiki-template">${tpl}</span>`;
+					}
+				}
+
+				return escapeHtml(line);
+			});
+
+			return parsedLines.join('\n');
+		}
+
+		function renderTable() {
+			const tbody = document.getElementById('tableBody');
+			tbody.innerHTML = '';
+
+			const showPreview = document.getElementById('showPreviewFilter').checked;
+
+			const totalPages = Math.ceil(filteredData.length / PAGE_SIZE) || 1;
+			const start = (currentPage - 1) * PAGE_SIZE;
+			const pageItems = filteredData.slice(start, start + PAGE_SIZE);
+
+			pageItems.forEach((item) => {
+				const tr = document.createElement('tr');
+				tr.className = 'main-row';
+				
+				const titleEnc = encodeURIComponent(item.title);
+				const contribsArr = Array.isArray(item.contributors) ? item.contributors : [];
+				const contribsStr = contribsArr.join(', ');
+
+				tr.innerHTML = `
+					<td><a href="https://pl.wiktionary.org/wiki/${titleEnc}" target="_blank">${escapeHtml(item.title)}</a></td>
+					<td>${escapeHtml(item.language || '')}</td>
+					<td>${formatDate(item.created_at)}</td>
+					<td>${item.size_bytes !== undefined ? item.size_bytes : ''}</td>
+					<td>${escapeHtml(item.creator || '')}</td>
+					<td>${escapeHtml(contribsStr)}</td>
+					<td>${item.backlinks_count !== undefined ? item.backlinks_count : 0}</td>
+				`;
+				tbody.appendChild(tr);
+				
+				if (item.wikitext !== undefined) {
+					const previewTr = document.createElement('tr');
+					previewTr.className = `preview-row ${showPreview ? 'open' : ''}`;
+
+					const parsedPreview = renderWikiPreview(item.wikitext);
+
+					previewTr.innerHTML = `
+						<td colspan="7">
+							<div class="preview-grid">
+								<div class="preview-column">
+									<h3>Podgląd strony</h3>
+									<div class="wiki-view">${parsedPreview}</div>
+								</div>
+								<div class="preview-column">
+									<h3>Wikitext (kod źródłowy)</h3>
+									<div class="code-view"><code>${escapeHtml(item.wikitext)}</code></div>
+								</div>
+							</div>
+						</td>
+					`;
+					tbody.appendChild(previewTr);
+				}
+			});
+
+			document.getElementById('visibleCount').textContent = filteredData.length;
+			document.getElementById('currentPage').textContent = currentPage;
+			document.getElementById('totalPages').textContent = totalPages;
+			document.getElementById('prevBtn').disabled = currentPage === 1;
+			document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+		}
+
+		function escapeHtml(str) {
+			if (!str) return '';
+			return String(str)
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;")
+				.replace(/"/g, "&quot;")
+				.replace(/'/g, "&#039;");
+		}
+
+		document.getElementById('prevBtn').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTable(); } });
+		document.getElementById('nextBtn').addEventListener('click', () => { if (currentPage * PAGE_SIZE < filteredData.length) { currentPage++; renderTable(); } });
+
+		init();
+	</script>
+</body>
+</html>
