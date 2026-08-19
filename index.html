@@ -18,8 +18,6 @@
 			--tr-even: #f8f9fa;
 			--tr-hover: #eaf3ff;
 			--link-color: #36c;
-			--badge-bg: #e0f2fe;
-			--badge-text: #0369a1;
 			--btn-bg: #ffffff;
 			--btn-text: #202122;
 			--preview-bg: #ffffff;
@@ -53,6 +51,11 @@
 		}
 
 		.filter-group { display: flex; flex-direction: column; gap: 6px; }
+		.filter-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
 		.filter-group label.group-title { font-size: 11px; font-weight: bold; color: var(--title-color); text-transform: uppercase; }
 
 		.radio-group-inline { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -72,7 +75,7 @@
 			background: var(--grid-bg);
 		}
 
-		.selection-grid .radio-label {
+		.selection-grid .checkbox-label {
 			width: 170px;
 			white-space: nowrap;
 		}
@@ -87,6 +90,10 @@
 			color: var(--btn-text);
 			border-radius: 3px;
 			cursor: pointer;
+		}
+		button.btn-small {
+			padding: 2px 6px;
+			font-size: 11px;
 		}
 		button:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -205,22 +212,38 @@
 		</div>
 
 		<div class="filter-group">
-			<label class="group-title">Wybierz język</label>
+			<div class="filter-header">
+				<label class="group-title">Wybierz język</label>
+				<button class="btn-small" onclick="toggleSelectAll('languagesContainer')">Zaznacz/Odznacz wszystko</button>
+			</div>
+			<div class="radio-group-inline" style="margin-bottom: 6px;">
+				<label class="radio-label"><input type="radio" name="langMode" value="include" checked> Tylko wybrane języki</label>
+				<label class="radio-label"><input type="radio" name="langMode" value="exclude"> Bez wybranych języków</label>
+			</div>
 			<div class="selection-grid" id="languagesContainer"></div>
 		</div>
 
 		<div class="filter-group">
-			<label class="group-title">Wybierz autora</label>
+			<div class="filter-header">
+				<label class="group-title">Wybierz autora</label>
+				<button class="btn-small" onclick="toggleSelectAll('creatorsContainer')">Zaznacz/Odznacz wszystko</button>
+			</div>
+			<div class="radio-group-inline" style="margin-bottom: 6px;">
+				<label class="radio-label"><input type="radio" name="creatorMode" value="include" checked> Tylko wybrani autorzy</label>
+				<label class="radio-label"><input type="radio" name="creatorMode" value="exclude"> Bez wybranych autorów</label>
+			</div>
 			<div class="selection-grid" id="creatorsContainer"></div>
 		</div>
 
 		<div class="filter-group">
-			<label class="group-title">Tryb współautora</label>
-			<div class="radio-group-inline" style="margin-bottom: 6px;">
-				<label class="radio-label"><input type="radio" name="contribMode" value="any" checked> Między innymi współautor</label>
-				<label class="radio-label"><input type="radio" name="contribMode" value="only"> Tylko współautor</label>
+			<div class="filter-header">
+				<label class="group-title">Wybierz współautora</label>
+				<button class="btn-small" onclick="toggleSelectAll('contributorsContainer')">Zaznacz/Odznacz wszystko</button>
 			</div>
-			<label class="group-title">Wybierz współautora</label>
+			<div class="radio-group-inline" style="margin-bottom: 6px;">
+				<label class="radio-label"><input type="radio" name="contribMode" value="include" checked> Tylko wybrani współautorzy</label>
+				<label class="radio-label"><input type="radio" name="contribMode" value="exclude"> Bez wybranych współautorów</label>
+			</div>
 			<div class="selection-grid" id="contributorsContainer"></div>
 		</div>
 	</div>
@@ -310,17 +333,12 @@
 
 			const sortedLangs = Object.keys(langCounts).sort((a, b) => a.localeCompare(b, 'pl'));
 
-			let html = `
-				<label class="radio-label" style="margin-bottom: 6px;">
-					<input type="radio" name="langSelect" value="" checked> <em>-- Wszystkie --</em>
-				</label>
-			`;
-
+			let html = '';
 			sortedLangs.forEach(lang => {
 				const count = langCounts[lang];
 				html += `
-					<label class="radio-label">
-						<input type="radio" name="langSelect" value="${escapeHtml(lang.toLowerCase())}">
+					<label class="checkbox-label">
+						<input type="checkbox" name="langCheck" value="${escapeHtml(lang.toLowerCase())}">
 						${escapeHtml(lang)} (${count})
 					</label>
 				`;
@@ -346,17 +364,12 @@
 
 			const sortedCreators = Object.keys(creatorCounts).sort((a,b) => a.localeCompare(b, 'pl'));
 
-			let html = `
-				<label class="radio-label" style="margin-bottom: 2px;">
-					<input type="radio" name="creatorSelect" value="" checked> <em>-- Wszyscy --</em>
-				</label>
-			`;
-
+			let html = '';
 			if (ipOrTempCount > 0) {
 				html += `
-					<label class="radio-label" style="margin-bottom: 6px;">
-						<input type="radio" name="creatorSelect" value="${IP_OR_TEMP_KEY}">
-						<strong>IP i konta tymczasowe (${ipOrTempCount})</strong>
+					<label class="checkbox-label" style="font-weight: bold;">
+						<input type="checkbox" name="creatorCheck" value="${IP_OR_TEMP_KEY}">
+						IP i konta tymczasowe (${ipOrTempCount})
 					</label>
 				`;
 			}
@@ -364,8 +377,8 @@
 			sortedCreators.forEach(creator => {
 				const count = creatorCounts[creator];
 				html += `
-					<label class="radio-label">
-						<input type="radio" name="creatorSelect" value="${escapeHtml(creator.toLowerCase())}">
+					<label class="checkbox-label">
+						<input type="checkbox" name="creatorCheck" value="${escapeHtml(creator.toLowerCase())}">
 						${escapeHtml(creator)} (${count})
 					</label>
 				`;
@@ -393,31 +406,36 @@
 
 			const sorted = Array.from(namedSet).sort((a,b) => a.localeCompare(b, 'pl'));
 
-			let html = `
-				<label class="radio-label" style="margin-bottom: 2px;">
-					<input type="radio" name="contribSelect" value="" checked> <em>-- Wszyscy --</em>
-				</label>
-			`;
-
+			let html = '';
 			if (hasIpOrTemp) {
 				html += `
-					<label class="radio-label" style="margin-bottom: 6px;">
-						<input type="radio" name="contribSelect" value="${IP_OR_TEMP_KEY}">
-						<strong>IP i konta tymczasowe</strong>
+					<label class="checkbox-label" style="font-weight: bold;">
+						<input type="checkbox" name="contribCheck" value="${IP_OR_TEMP_KEY}">
+						IP i konta tymczasowe
 					</label>
 				`;
 			}
 
 			sorted.forEach(contrib => {
 				html += `
-					<label class="radio-label">
-						<input type="radio" name="contribSelect" value="${escapeHtml(contrib.toLowerCase())}">
+					<label class="checkbox-label">
+						<input type="checkbox" name="contribCheck" value="${escapeHtml(contrib.toLowerCase())}">
 						${escapeHtml(contrib)}
 					</label>
 				`;
 			});
 
 			container.innerHTML = html;
+		}
+
+		function toggleSelectAll(containerId) {
+			const container = document.getElementById(containerId);
+			const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+			if (checkboxes.length === 0) return;
+
+			const shouldCheckAll = Array.from(checkboxes).some(cb => !cb.checked);
+			checkboxes.forEach(cb => cb.checked = shouldCheckAll);
+			applyFilters();
 		}
 
 		function attachEventListeners() {
@@ -453,49 +471,59 @@
 		}
 
 		function applyFilters() {
-			const selectedLangEl = document.querySelector('input[name="langSelect"]:checked');
-			const selectedLang = selectedLangEl ? selectedLangEl.value.toLowerCase() : '';
+			// Pobieranie zaznaczonych wartości
+			const selectedLangs = Array.from(document.querySelectorAll('input[name="langCheck"]:checked')).map(cb => cb.value);
+			const langMode = document.querySelector('input[name="langMode"]:checked').value;
 
-			const selectedCreatorEl = document.querySelector('input[name="creatorSelect"]:checked');
-			const selectedCreator = selectedCreatorEl ? selectedCreatorEl.value : '';
+			const selectedCreators = Array.from(document.querySelectorAll('input[name="creatorCheck"]:checked')).map(cb => cb.value);
+			const creatorMode = document.querySelector('input[name="creatorMode"]:checked').value;
 
-			const selectedContribEl = document.querySelector('input[name="contribSelect"]:checked');
-			const selectedContrib = selectedContribEl ? selectedContribEl.value : '';
+			const selectedContribs = Array.from(document.querySelectorAll('input[name="contribCheck"]:checked')).map(cb => cb.value);
 			const contribMode = document.querySelector('input[name="contribMode"]:checked').value;
 
 			filteredData = rawData.filter(item => {
-				if (selectedLang) {
+				// 1. FILTR JĘZYKÓW
+				if (selectedLangs.length > 0) {
 					const itemLang = (item.language || '').toLowerCase();
-					if (itemLang !== selectedLang) return false;
+					const isIncluded = selectedLangs.includes(itemLang);
+					if (langMode === 'include' && !isIncluded) return false;
+					if (langMode === 'exclude' && isIncluded) return false;
 				}
 
-				if (selectedCreator) {
-					if (selectedCreator === IP_OR_TEMP_KEY) {
-						if (!isIpOrTempAccount(item.creator)) return false;
-					} else {
-						if ((item.creator || '').toLowerCase() !== selectedCreator) return false;
+				// 2. FILTR AUTORÓW
+				if (selectedCreators.length > 0) {
+					const itemCreator = (item.creator || '').toLowerCase();
+					const isIpTemp = isIpOrTempAccount(item.creator);
+					
+					let isMatched = false;
+					if (selectedCreators.includes(IP_OR_TEMP_KEY) && isIpTemp) {
+						isMatched = true;
+					} else if (selectedCreators.includes(itemCreator)) {
+						isMatched = true;
 					}
+
+					if (creatorMode === 'include' && !isMatched) return false;
+					if (creatorMode === 'exclude' && isMatched) return false;
 				}
 
-				if (selectedContrib) {
+				// 3. FILTR WSPÓŁAUTORÓW
+				if (selectedContribs.length > 0) {
 					const contribsList = Array.isArray(item.contributors) ? item.contributors : [];
 					const contribsLower = contribsList.map(c => c.toLowerCase());
 
-					if (selectedContrib === IP_OR_TEMP_KEY) {
-						if (contribMode === 'only') {
-							const allAreIpOrTemp = contribsList.length > 0 && contribsList.every(c => isIpOrTempAccount(c));
-							if (!allAreIpOrTemp) return false;
-						} else {
-							const hasAnyIpOrTemp = contribsList.some(c => isIpOrTempAccount(c));
-							if (!hasAnyIpOrTemp) return false;
-						}
-					} else {
-						if (contribMode === 'only') {
-							if (contribsLower.length !== 1 || contribsLower[0] !== selectedContrib) return false;
-						} else {
-							if (!contribsLower.includes(selectedContrib)) return false;
-						}
+					const hasIpTemp = contribsList.some(c => isIpOrTempAccount(c));
+					
+					// Sprawdzanie czy którykolwiek z wybranej listy występuje w haśle
+					let hasMatch = false;
+					if (selectedContribs.includes(IP_OR_TEMP_KEY) && hasIpTemp) {
+						hasMatch = true;
 					}
+					if (!hasMatch) {
+						hasMatch = selectedContribs.some(sc => contribsLower.includes(sc));
+					}
+
+					if (contribMode === 'include' && !hasMatch) return false;
+					if (contribMode === 'exclude' && hasMatch) return false;
 				}
 
 				return true;
