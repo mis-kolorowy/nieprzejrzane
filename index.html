@@ -300,10 +300,15 @@
 
 		function populateLanguages() {
 			const container = document.getElementById('languagesContainer');
-			const set = new Set();
-			rawData.forEach(item => { if (item.language) set.add(item.language); });
+			const langCounts = {};
 
-			const sorted = Array.from(set).sort((a,b) => a.localeCompare(b, 'pl'));
+			rawData.forEach(item => {
+				if (item.language) {
+					langCounts[item.language] = (langCounts[item.language] || 0) + 1;
+				}
+			});
+
+			const sortedLangs = Object.keys(langCounts).sort((a, b) => a.localeCompare(b, 'pl'));
 
 			let html = `
 				<label class="radio-label" style="margin-bottom: 6px;">
@@ -311,11 +316,12 @@
 				</label>
 			`;
 
-			sorted.forEach(lang => {
+			sortedLangs.forEach(lang => {
+				const count = langCounts[lang];
 				html += `
 					<label class="radio-label">
 						<input type="radio" name="langSelect" value="${escapeHtml(lang.toLowerCase())}">
-						${escapeHtml(lang)}
+						${escapeHtml(lang)} (${count})
 					</label>
 				`;
 			});
