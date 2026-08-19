@@ -205,11 +205,6 @@
 		</div>
 
 		<div class="filter-group">
-			<label class="group-title">Tryb języka</label>
-			<div class="radio-group-inline" style="margin-bottom: 6px;">
-				<label class="radio-label"><input type="radio" name="langMode" value="any" checked> Między innymi język</label>
-				<label class="radio-label"><input type="radio" name="langMode" value="only"> Tylko język</label>
-			</div>
 			<label class="group-title">Wybierz język</label>
 			<div class="selection-grid" id="languagesContainer"></div>
 		</div>
@@ -330,20 +325,20 @@
 
 		function populateCreators() {
 			const container = document.getElementById('creatorsContainer');
-			const namedSet = new Set();
-			let hasIpOrTemp = false;
+			const creatorCounts = {};
+			let ipOrTempCount = 0;
 
 			rawData.forEach(item => {
 				if (item.creator) {
 					if (isIpOrTempAccount(item.creator)) {
-						hasIpOrTemp = true;
+						ipOrTempCount++;
 					} else {
-						namedSet.add(item.creator);
+						creatorCounts[item.creator] = (creatorCounts[item.creator] || 0) + 1;
 					}
 				}
 			});
 
-			const sorted = Array.from(namedSet).sort((a,b) => a.localeCompare(b, 'pl'));
+			const sortedCreators = Object.keys(creatorCounts).sort((a,b) => a.localeCompare(b, 'pl'));
 
 			let html = `
 				<label class="radio-label" style="margin-bottom: 2px;">
@@ -351,20 +346,21 @@
 				</label>
 			`;
 
-			if (hasIpOrTemp) {
+			if (ipOrTempCount > 0) {
 				html += `
 					<label class="radio-label" style="margin-bottom: 6px;">
 						<input type="radio" name="creatorSelect" value="${IP_OR_TEMP_KEY}">
-						<strong>IP i konta tymczasowe</strong>
+						<strong>IP i konta tymczasowe (${ipOrTempCount})</strong>
 					</label>
 				`;
 			}
 
-			sorted.forEach(creator => {
+			sortedCreators.forEach(creator => {
+				const count = creatorCounts[creator];
 				html += `
 					<label class="radio-label">
 						<input type="radio" name="creatorSelect" value="${escapeHtml(creator.toLowerCase())}">
-						${escapeHtml(creator)}
+						${escapeHtml(creator)} (${count})
 					</label>
 				`;
 			});
@@ -453,7 +449,6 @@
 		function applyFilters() {
 			const selectedLangEl = document.querySelector('input[name="langSelect"]:checked');
 			const selectedLang = selectedLangEl ? selectedLangEl.value.toLowerCase() : '';
-			const langMode = document.querySelector('input[name="langMode"]:checked').value;
 
 			const selectedCreatorEl = document.querySelector('input[name="creatorSelect"]:checked');
 			const selectedCreator = selectedCreatorEl ? selectedCreatorEl.value : '';
