@@ -131,37 +131,15 @@
 		a:hover { text-decoration: underline; }
 		#loading { font-size: 16px; color: var(--link-color); font-weight: bold; margin: 20px 0; }
 
-		/* --- STYLE DLA PODGLĄDU STRONY --- */
+		/* --- STYLE DLA WIKI-KODU --- */
 		.preview-row { display: none; }
 		.preview-row.open { display: table-row; }
 
-		.preview-grid {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: 15px;
+		.code-container {
 			padding: 12px;
-			background: var(--grid-bg);
-		}
-
-		.preview-column {
 			background: var(--preview-bg);
-			border: 1px solid var(--border-color);
-			border-radius: 4px;
-			padding: 12px;
-			overflow-x: auto;
 		}
 
-		.preview-column h3 {
-			margin-top: 0;
-			margin-bottom: 10px;
-			font-size: 12px;
-			text-transform: uppercase;
-			color: var(--title-color);
-			border-bottom: 1px solid var(--grid-border);
-			padding-bottom: 4px;
-		}
-
-		/* Prawa kolumna - wiki-kod */
 		.code-view {
 			font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
 			font-size: 12px;
@@ -169,36 +147,19 @@
 			word-break: break-all;
 			line-height: 1.4;
 			color: #24292e;
-		}
-
-		/* Lewa kolumna - podgląd wiki */
-		.wiki-view {
-			font-family: sans-serif;
-			font-size: 13px;
-			line-height: 1.5;
-			white-space: pre-wrap;
-		}
-
-		.wiki-view .wiki-header {
-			font-size: 16px;
-			font-weight: normal;
-			border-bottom: 1px solid #a2a9b1;
-			margin: 10px 0 8px 0;
-			padding-bottom: 2px;
-		}
-
-		.wiki-view .wiki-template {
-			font-weight: bold;
-			margin-top: 6px;
-			margin-bottom: 2px;
-			display: block;
+			background: var(--grid-bg);
+			border: 1px solid var(--border-color);
+			border-radius: 4px;
+			padding: 12px;
+			max-height: 300px;
+			overflow-y: auto;
 		}
 	</style>
 </head>
 <body>
 
 	<div class="header-container">
-		<h1>Nieprzejrzane z jedną sekcją językową w polskim Wikisłowniku (stan na dzień 18 sierpnia 2026).</h1>
+		<h1>Nieprzejrzane z jedną sekcją językową w polskim Wikisłowniku (stan na dzień 18 sierpnia 2026)</h1>
 	</div>
 
 	<div class="filter-panel">
@@ -206,7 +167,7 @@
 			<div class="radio-group-inline">
 				<label class="checkbox-label">
 					<input type="checkbox" id="showPreviewFilter">
-					<strong>Pokaż podgląd strony</strong>
+					<strong>Pokaż wiki-kod</strong>
 				</label>
 			</div>
 		</div>
@@ -288,13 +249,6 @@
 
 		const IP_OR_TEMP_KEY = '__IP_AND_TEMP__';
 
-		const SECTION_TEMPLATES = [
-			'wymowa', 'znaczenia', 'odmiana', 'przykłady', 'składnia', 
-			'kolokacje', 'synonimy', 'antonimy', 'hiperonimy', 'hiponimy', 
-			'holonimy', 'meronimy', 'pokrewne', 'frazeologia', 'etymologia', 
-			'uwagi', 'źródła'
-		];
-
 		function isIpOrTempAccount(username) {
 			if (!username) return false;
 			if (username.startsWith('~')) return true;
@@ -339,7 +293,7 @@
 				html += `
 					<label class="checkbox-label">
 						<input type="checkbox" name="langCheck" value="${escapeHtml(lang.toLowerCase())}">
-						${escapeHtml(lang)} (${count})
+						${escapeHtml(lang)} (${count})
 					</label>
 				`;
 			});
@@ -471,7 +425,6 @@
 		}
 
 		function applyFilters() {
-			// Pobieranie zaznaczonych wartości
 			const selectedLangs = Array.from(document.querySelectorAll('input[name="langCheck"]:checked')).map(cb => cb.value);
 			const langMode = document.querySelector('input[name="langMode"]:checked').value;
 
@@ -482,7 +435,6 @@
 			const contribMode = document.querySelector('input[name="contribMode"]:checked').value;
 
 			filteredData = rawData.filter(item => {
-				// 1. FILTR JĘZYKÓW
 				if (selectedLangs.length > 0) {
 					const itemLang = (item.language || '').toLowerCase();
 					const isIncluded = selectedLangs.includes(itemLang);
@@ -490,7 +442,6 @@
 					if (langMode === 'exclude' && isIncluded) return false;
 				}
 
-				// 2. FILTR AUTORÓW
 				if (selectedCreators.length > 0) {
 					const itemCreator = (item.creator || '').toLowerCase();
 					const isIpTemp = isIpOrTempAccount(item.creator);
@@ -506,14 +457,12 @@
 					if (creatorMode === 'exclude' && isMatched) return false;
 				}
 
-				// 3. FILTR WSPÓŁAUTORÓW
 				if (selectedContribs.length > 0) {
 					const contribsList = Array.isArray(item.contributors) ? item.contributors : [];
 					const contribsLower = contribsList.map(c => c.toLowerCase());
 
 					const hasIpTemp = contribsList.some(c => isIpOrTempAccount(c));
 					
-					// Sprawdzanie czy którykolwiek z wybranej listy występuje w haśle
 					let hasMatch = false;
 					if (selectedContribs.includes(IP_OR_TEMP_KEY) && hasIpTemp) {
 						hasMatch = true;
@@ -566,31 +515,6 @@
 			return isoString.replace('T', ' ').replace('Z', '');
 		}
 
-		function renderWikiPreview(wikitext) {
-			if (!wikitext) return '';
-			
-			const lines = wikitext.split('\n');
-			const parsedLines = lines.map(line => {
-				let trimmed = line.trim();
-
-				if (trimmed.startsWith('==') && trimmed.endsWith('==')) {
-					const title = trimmed.replace(/^==\s*/, '').replace(/\s*==$/, '');
-					return `<div class="wiki-header">${escapeHtml(title)}</div>`;
-				}
-
-				for (const tpl of SECTION_TEMPLATES) {
-					const pattern = new RegExp(`^\\{\\{\\s*${tpl}\\s*\\}\\}$`, 'i');
-					if (pattern.test(trimmed)) {
-						return `<span class="wiki-template">${tpl}</span>`;
-					}
-				}
-
-				return escapeHtml(line);
-			});
-
-			return parsedLines.join('\n');
-		}
-
 		function renderTable() {
 			const tbody = document.getElementById('tableBody');
 			tbody.innerHTML = '';
@@ -624,19 +548,10 @@
 					const previewTr = document.createElement('tr');
 					previewTr.className = `preview-row ${showPreview ? 'open' : ''}`;
 
-					const parsedPreview = renderWikiPreview(item.wikitext);
-
 					previewTr.innerHTML = `
 						<td colspan="7">
-							<div class="preview-grid">
-								<div class="preview-column">
-									<h3>Podgląd strony</h3>
-									<div class="wiki-view">${parsedPreview}</div>
-								</div>
-								<div class="preview-column">
-									<h3>Wikitext (kod źródłowy)</h3>
-									<div class="code-view"><code>${escapeHtml(item.wikitext)}</code></div>
-								</div>
+							<div class="code-container">
+								<div class="code-view"><code>${escapeHtml(item.wikitext)}</code></div>
 							</div>
 						</td>
 					`;
