@@ -51,12 +51,14 @@
 		}
 
 		.filter-group { display: flex; flex-direction: column; gap: 6px; }
-		.filter-header {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-		}
 		.filter-group label.group-title { font-size: 11px; font-weight: bold; color: var(--title-color); text-transform: uppercase; }
+
+		.section-subheader {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 6px;
+		}
 
 		.radio-group-inline { display: flex; gap: 12px; flex-wrap: wrap; }
 		.radio-label, .checkbox-label { font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
@@ -76,8 +78,9 @@
 		}
 
 		.selection-grid .checkbox-label {
-			width: 170px;
-			white-space: nowrap;
+			width: 220px;
+			white-space: normal;
+			word-break: break-word;
 		}
 
 		.table-toolbar {
@@ -115,7 +118,7 @@
 			cursor: pointer;
 		}
 		button.btn-small {
-			padding: 2px 6px;
+			padding: 3px 8px;
 			font-size: 11px;
 		}
 		button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -188,46 +191,47 @@
 
 	<div class="filter-panel">
 		<div class="filter-group">
+			<label class="group-title">Wiki-kod</label>
 			<div class="radio-group-inline">
 				<label class="checkbox-label">
 					<input type="checkbox" id="showPreviewFilter">
-					<strong>Pokaż wiki-kod</strong>
+					Pokazuj
 				</label>
 			</div>
 		</div>
 
 		<div class="filter-group">
-			<div class="filter-header">
-				<label class="group-title">Wybierz język</label>
-				<button class="btn-small" onclick="toggleSelectAll('languagesContainer')">Zaznacz/Odznacz wszystko</button>
-			</div>
-			<div class="radio-group-inline" style="margin-bottom: 6px;">
+			<label class="group-title">Wybierz język</label>
+			<div class="radio-group-inline">
 				<label class="radio-label"><input type="radio" name="langMode" value="include" checked> Tylko wybrane języki</label>
 				<label class="radio-label"><input type="radio" name="langMode" value="exclude"> Bez wybranych języków</label>
+			</div>
+			<div class="section-subheader">
+				<button type="button" class="btn-small" onclick="toggleSelectAll('languagesContainer')">Zaznacz/Odznacz wszystko</button>
 			</div>
 			<div class="selection-grid" id="languagesContainer"></div>
 		</div>
 
 		<div class="filter-group">
-			<div class="filter-header">
-				<label class="group-title">Wybierz autora</label>
-				<button class="btn-small" onclick="toggleSelectAll('creatorsContainer')">Zaznacz/Odznacz wszystko</button>
-			</div>
-			<div class="radio-group-inline" style="margin-bottom: 6px;">
+			<label class="group-title">Wybierz autora</label>
+			<div class="radio-group-inline">
 				<label class="radio-label"><input type="radio" name="creatorMode" value="include" checked> Tylko wybrani autorzy</label>
 				<label class="radio-label"><input type="radio" name="creatorMode" value="exclude"> Bez wybranych autorów</label>
+			</div>
+			<div class="section-subheader">
+				<button type="button" class="btn-small" onclick="toggleSelectAll('creatorsContainer')">Zaznacz/Odznacz wszystko</button>
 			</div>
 			<div class="selection-grid" id="creatorsContainer"></div>
 		</div>
 
 		<div class="filter-group">
-			<div class="filter-header">
-				<label class="group-title">Wybierz współautora</label>
-				<button class="btn-small" onclick="toggleSelectAll('contributorsContainer')">Zaznacz/Odznacz wszystko</button>
-			</div>
-			<div class="radio-group-inline" style="margin-bottom: 6px;">
+			<label class="group-title">Wybierz współautora</label>
+			<div class="radio-group-inline">
 				<label class="radio-label"><input type="radio" name="contribMode" value="include" checked> Tylko wybrani współautorzy</label>
 				<label class="radio-label"><input type="radio" name="contribMode" value="exclude"> Bez wybranych współautorów</label>
+			</div>
+			<div class="section-subheader">
+				<button type="button" class="btn-small" onclick="toggleSelectAll('contributorsContainer')">Zaznacz/Odznacz wszystko</button>
 			</div>
 			<div class="selection-grid" id="contributorsContainer"></div>
 		</div>
@@ -350,7 +354,7 @@
 				html += `
 					<label class="checkbox-label" style="font-weight: bold;">
 						<input type="checkbox" name="creatorCheck" value="${IP_OR_TEMP_KEY}">
-						IP i konta tymczasowe (${ipOrTempCount})
+						IP i konta tymczasowe (${ipOrTempCount})
 					</label>
 				`;
 			}
@@ -360,7 +364,7 @@
 				html += `
 					<label class="checkbox-label">
 						<input type="checkbox" name="creatorCheck" value="${escapeHtml(creator.toLowerCase())}">
-						${escapeHtml(creator)} (${count})
+						${escapeHtml(creator)} (${count})
 					</label>
 				`;
 			});
